@@ -30,9 +30,8 @@
 - **2 dépôts GitHub distincts** : `portfolio-backend` et `portfolio-frontend`
 - Un fichier `README.md` dans chaque repo expliquant comment installer et lancer le projet
 - Variables d'environnement documentées dans `.env.example` (jamais le `.env` réel)
-- Architecture en couches respectée côté back : routes → controller → **service** → model
+- Architecture en couches respectée côté back : routes → controller → service → model
 - Validation obligatoire : `express-validator` côté back, React Hook Form côté front
-- `async/await` utilisé **partout** (aucun `.then()` dans le code rendu)
 - Code propre, composants organisés côté front
 
 ---
@@ -70,18 +69,18 @@ npm install express mysql2 bcrypt jsonwebtoken dotenv cors nodemailer express-va
 
 ### 1.3 Structure de dossiers à créer
 
-L'architecture utilisée est en **4 couches** :
+L'architecture utilisée est en couches :
 
 ```
 portfolio-backend/
 ├── src/
 │   ├── config/
-│   │   └── db.js                    ← Pool de connexion MySQL
+│   │   └── db.js                     ← Pool de connexion MySQL
 │   ├── controllers/
 │   │   ├── auth.controller.js        ← Reçoit req/res, délègue au service
 │   │   ├── project.controller.js
 │   │   └── contact.controller.js
-│   ├── services/                     ← ★ Logique métier (nouvelle couche)
+│   ├── services/                     ← Logique métier
 │   │   ├── auth.service.js           ← Vérif identifiants, génération JWT
 │   │   ├── project.service.js        ← Logique CRUD, règles métier
 │   │   └── contact.service.js        ← Envoi d'email
@@ -100,6 +99,8 @@ portfolio-backend/
 │   │   ├── auth.routes.js
 │   │   ├── project.routes.js
 │   │   └── contact.routes.js
+│   ├── errors/
+│   │   └── AppError.js               ← Classe d'erreur personnalisée avec status HTTP
 │   └── server.js
 ├── .env
 ├── .env.example
@@ -190,14 +191,14 @@ Puis insérer en SQL (remplacer le hash par celui que vous avez généré) :
 
 ```sql
 INSERT INTO users (email, password, role)
-VALUES ('admin@portfolio.fr', '$2b$10$VOTRE_HASH_ICI', 'admin');
+VALUES ('admin@portfolio.fr', 'VOTRE_HASH_ICI', 'admin');
 ```
 
 ### 2.3 Configurer la connexion MySQL
 
 Dans `src/config/db.js`, créer et exporter un **pool** de connexions en utilisant `mysql2/promise` et les variables d'environnement.
 
-> 📖 Vous avez déjà fait cette configuration dans le cours myblog. Retrouvez votre cours et adaptez-le.
+> 📖 Vous avez déjà fait cette configuration dans le cours. Retrouvez votre cours et adaptez-le.
 
 ---
 
@@ -240,7 +241,35 @@ Créer `src/middlewares/errorHandler.js`. Ce middleware intercepte toutes les er
 
 > Sa signature est particulière : il prend **4 paramètres** `(err, req, res, next)`. Retrouvez le pattern dans votre cours sur la gestion d'erreurs Express.
 
-### 3.3 Middleware `validate`
+### 3.3 Classe `AppError`
+ 
+Créer `src/errors/AppError.js`. Cette classe étend `Error` et ajoute un code HTTP `status`, ce qui permet aux services de lancer des erreurs précises sans connaître `req`/`res`.
+ 
+```js
+class AppError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.status = status;
+  }
+}
+ 
+export default AppError;
+```
+ 
+**Utilisation dans un service :**
+```js
+import AppError from '../errors/AppError.js';
+ 
+// Exemple : ressource introuvable
+throw new AppError('Projet introuvable', 404);
+ 
+// Exemple : accès refusé
+throw new AppError('Identifiants invalides', 401);
+```
+ 
+`errorHandler` récupère automatiquement `err.status` et `err.message` pour construire la réponse JSON. Si `status` est absent (erreur inattendue), il retourne `500`.
+
+### 3.4 Middleware `validate`
 
 Créer `src/middlewares/validate.middleware.js`. Ce middleware est appelé **après** les règles `express-validator` dans une route, pour vérifier s'il y a des erreurs et renvoyer un `400` si c'est le cas.
 
@@ -268,8 +297,6 @@ export default validate;
 
 Dans `src/models/user.model.js`, écrire une fonction `findByEmail(email)` qui interroge la table `users` avec une requête paramétrée et retourne l'utilisateur trouvé (ou `null`).
 
-> ⚠️ Toutes les fonctions doivent utiliser `async/await`. Aucun `.then()` n'est accepté dans le code rendu.
-
 ### 4.2 Service auth
 
 Dans `src/services/auth.service.js`, écrire la fonction `loginUser({ email, password })` qui :
@@ -286,11 +313,10 @@ Dans `src/services/auth.service.js`, écrire la fonction `loginUser({ email, pas
 ### 4.3 Contrôleur auth
 
 Dans `src/controllers/auth.controller.js`, écrire `login(req, res, next)` qui :
-
+ 
 1. Extrait `email` et `password` de `req.body`
-2. Appelle `authService.loginUser(...)` dans un bloc `try/catch`
+2. Appelle `authService.loginUser(...)`
 3. Renvoie `res.json({ token })` en cas de succès
-4. Passe l'erreur à `next(err)` en cas d'échec
 
 ### 4.4 Middleware `authenticate`
 
@@ -365,65 +391,122 @@ Dans `src/validators/contact.validator.js`, exporter `validateContact` couvrant 
 ---
 
 ## Étape 6 · CRUD Projets _(~60 min)_
-
-### 6.1 Modèle projet
-
-Dans `src/models/project.model.js`, écrire les fonctions suivantes (toutes en `async/await`) :
-
-| Fonction | Requête SQL |
-|---|---|
-| `findAll()` | `SELECT * FROM projects ORDER BY created_at DESC` |
-| `findById(id)` | `SELECT * FROM projects WHERE id = ?` |
-| `create(data)` | `INSERT INTO projects (title, ...) VALUES (?, ...)` puis `findById(insertId)` |
-| `update(id, data)` | `UPDATE projects SET ... WHERE id = ?` puis `findById(id)` |
-| `remove(id)` | `DELETE FROM projects WHERE id = ?` → retourne `affectedRows > 0` |
-
-> ⚠️ Toutes les requêtes doivent être **paramétrées** avec `?`. Jamais de concaténation de chaînes.
-
-### 6.2 Service projet
-
-Dans `src/services/project.service.js`, écrire les fonctions métier :
-
-| Fonction service | Ce qu'elle fait |
-|---|---|
-| `getAllProjects()` | Appelle `model.findAll()` |
-| `getProjectById(id)` | Appelle `model.findById(id)`, lance une erreur `404` si `null` |
-| `createProject(data)` | Appelle `model.create(data)` |
-| `updateProject(id, data)` | Vérifie que le projet existe (via `findById`), appelle `model.update` |
-| `deleteProject(id)` | Appelle `model.remove(id)`, lance une erreur `404` si `false` |
-
-### 6.3 Contrôleur projet
-
-Dans `src/controllers/project.controller.js`, écrire une fonction pour chaque action (`getAllProjects`, `getProjectById`, `createProject`, `updateProject`, `deleteProject`). Chaque contrôleur :
-- Extrait les données nécessaires de `req.body` ou `req.params`
-- Appelle la fonction de service correspondante
-- Renvoie la réponse JSON avec le bon code HTTP
-- Attrape les erreurs avec `try/catch` et les passe à `next(err)`
-
-### 6.4 Routes projet
-
-Dans `src/routes/project.routes.js`, déclarer les routes en appliquant les middlewares appropriés :
-
-| Route | Middlewares |
-|---|---|
-| `GET /` | — |
-| `GET /:id` | — |
-| `POST /` | `authenticate` · `authorize('admin')` · `validateProject` · `validate` |
-| `PUT /:id` | `authenticate` · `authorize('admin')` · `validateProject` · `validate` |
-| `DELETE /:id` | `authenticate` · `authorize('admin')` |
-
-### ✅ Tests Étape 6
-
+ 
+> 🔁 **Méthode de travail** : développer et tester **une feature à la fois**, dans l'ordre suivant. Pour chaque feature, implémenter les 3 couches (model → service → controller) puis déclarer la route et tester immédiatement avant de passer à la suivante.
+ 
+---
+ 
+### Feature 6.1 — Récupérer tous les projets
+ 
+**Model** — dans `src/models/project.model.js`, écrire `findAll()` :
+- Requête : `SELECT * FROM projects ORDER BY created_at DESC`
+- Retourne le tableau de résultats (vide si aucun projet)
+**Service** — dans `src/services/project.service.js`, écrire `getAllProjects()` :
+- Appelle `model.findAll()` et retourne le résultat
+**Controller** — dans `src/controllers/project.controller.js`, écrire `getAllProjects(req, res)` :
+- Appelle le service et renvoie `res.json(projects)`
+- Rappel : pas de `try/catch` (Express 5 propage automatiquement les erreurs async)
+**Route** — dans `src/routes/project.routes.js`, déclarer `GET /` sans middleware d'auth, et brancher le fichier dans `server.js`.
+ 
+**✅ Test**
 ```
-GET    /api/projects              → 200 []
-GET    /api/projects/999          → 404
-POST   /api/projects (sans token) → 401
-POST   /api/projects (token admin, title manquant) → 400 + erreurs de validation
-POST   /api/projects (token admin, données valides) → 201 + projet créé
-PUT    /api/projects/1 (token admin) → 200 + projet modifié
+GET /api/projects → 200 []
+```
+ 
+---
+ 
+### Feature 6.2 — Récupérer un projet par son id
+ 
+**Model** — écrire `findById(id)` :
+- Requête paramétrée : `SELECT * FROM projects WHERE id = ?`
+- Retourne l'objet projet ou `null`
+**Service** — écrire `getProjectById(id)` :
+- Appelle `model.findById(id)`
+- Lance une `AppError('Projet introuvable', 404)` si le résultat est `null`
+**Controller** — écrire `getProjectById(req, res)` :
+- Extrait `req.params.id`
+- Appelle le service et renvoie `res.json(project)`
+**Route** — déclarer `GET /:id` sans middleware d'auth.
+ 
+**✅ Tests**
+```
+GET /api/projects/1   → 404 (pas encore de projet en base)
+GET /api/projects/abc → 404
+```
+ 
+---
+ 
+### Feature 6.3 — Créer un projet
+ 
+**Model** — écrire `create(data)` :
+- Requête `INSERT INTO projects (title, description, tech_stack, github_url, demo_url, image_url) VALUES (?, ?, ?, ?, ?, ?)`
+- Appelle `findById(result.insertId)` pour retourner le projet complet
+**Service** — écrire `createProject(data)` :
+- Appelle `model.create(data)` et retourne le projet créé
+**Controller** — écrire `createProject(req, res)` :
+- Extrait les champs de `req.body`
+- Appelle le service et renvoie `res.status(201).json(project)`
+**Route** — déclarer `POST /` avec les middlewares : `authenticate` · `authorize('admin')` · `validateProject` · `validate`
+ 
+**✅ Tests**
+```
+POST /api/projects (sans token)                        → 401
+POST /api/projects (token admin, title manquant)       → 400 + erreurs de validation
+POST /api/projects (token admin, github_url invalide)  → 400 + erreur sur le champ url
+POST /api/projects (token admin, données valides)      → 201 + projet créé avec son id
+```
+ 
+---
+ 
+### Feature 6.4 — Modifier un projet
+ 
+**Model** — écrire `update(id, data)` :
+- Requête `UPDATE projects SET title=?, description=?, tech_stack=?, github_url=?, demo_url=?, image_url=? WHERE id=?`
+- Appelle `findById(id)` pour retourner le projet mis à jour
+**Service** — écrire `updateProject(id, data)` :
+- Vérifie que le projet existe avec `findById(id)` → `AppError(404)` si absent
+- Appelle `model.update(id, data)` et retourne le résultat
+**Controller** — écrire `updateProject(req, res)` :
+- Extrait `req.params.id` et `req.body`
+- Appelle le service et renvoie `res.json(project)`
+**Route** — déclarer `PUT /:id` avec les middlewares : `authenticate` · `authorize('admin')` · `validateProject` · `validate`
+ 
+**✅ Tests**
+```
+PUT /api/projects/1 (token admin, données valides) → 200 + projet modifié
+PUT /api/projects/999 (token admin)                → 404
+PUT /api/projects/1 (sans token)                   → 401
+```
+ 
+---
+ 
+### Feature 6.5 — Supprimer un projet
+ 
+**Model**
+— écrire `remove(id)` :
+- Requête `DELETE FROM projects WHERE id = ?`
+- Retourne `result.affectedRows > 0` (booléen)
+  
+**Service**
+— écrire `deleteProject(id)` :
+- Appelle `model.remove(id)`
+- Lance une `AppError('Projet introuvable', 404)` si le résultat est `false`
+  
+**Controller**
+— écrire `deleteProject(req, res)` :
+- Extrait `req.params.id`
+- Appelle le service et renvoie `res.status(204).send()`
+  
+**Route**
+— déclarer `DELETE /:id` avec les middlewares : `authenticate` · `authorize('admin')`
+ 
+**✅ Tests**
+```
 DELETE /api/projects/1 (token admin) → 204
+DELETE /api/projects/1 (token admin) → 404 (déjà supprimé)
+DELETE /api/projects/1 (sans token)  → 401
 ```
-
+ 
 ---
 
 ## Étape 7 · Formulaire de contact _(~30 min)_
