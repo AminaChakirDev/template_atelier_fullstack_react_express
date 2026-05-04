@@ -3,6 +3,24 @@
 
 ---
 
+## À quoi sert ce projet ?
+
+Cet atelier est l'occasion de développer **votre propre portfolio de développeur**.
+
+Une fois déployé, il vous servira de carte de visite auprès des recruteurs : vos visiteurs pourront y découvrir vos projets, et vous aurez la main sur tout le contenu depuis un espace d'administration sécurisé.
+
+**Ce que les visiteurs verront :**
+- La liste de vos projets avec image de couverture, description et technologies utilisées
+- Le détail de chaque projet : lien GitHub, démo vidéo, stack complète
+- Un formulaire de contact pour vous écrire directement
+
+**Ce que vous gérerez en tant qu'administrateur :**
+- Ajouter, modifier ou supprimer vos projets
+- Renseigner pour chaque projet : titre, description, stack technique, lien GitHub, lien démo, image de couverture
+- Accéder à votre espace admin via une connexion sécurisée par JWT
+
+C'est un projet que vous pourrez continuer à faire évoluer après la formation — et que vous aurez tout intérêt à montrer en entretien.
+
 > **Objectif pédagogique**
 > Concevoir et développer une application web full-stack de type portfolio personnel.
 > L'admin peut se connecter, gérer ses projets (CRUD), et les visiteurs peuvent envoyer un message de contact.
@@ -93,6 +111,7 @@ portfolio-backend/
 │   │   ├── validate.middleware.js     ← Récupère les erreurs express-validator
 │   │   └── errorHandler.js            ← Gestionnaire d'erreurs centralisé
 │   ├── validators/
+│   │   ├── auth.validator.js          ← Règles de validation du login
 │   │   ├── project.validator.js       ← Règles de validation des projets
 │   │   └── contact.validator.js       ← Règles de validation du contact
 │   ├── routes/
@@ -156,7 +175,7 @@ CREATE TABLE users (
   id         INT AUTO_INCREMENT PRIMARY KEY,
   email      VARCHAR(255) NOT NULL UNIQUE,
   password   VARCHAR(255) NOT NULL,
-  role       VARCHAR(50)  NOT NULL DEFAULT 'admin',
+  role       VARCHAR(50)  NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -339,9 +358,19 @@ router.post('/', authenticate, authorize('admin'), createProject);
 
 > `authorize` est une **factory** : elle prend des rôles en paramètre et retourne un middleware. Si le rôle de l'utilisateur ne correspond pas, répondre `403 Forbidden`.
 
-### 4.6 Routes auth
+### 4.6 Validator auth
 
-Dans `src/routes/auth.routes.js`, déclarer `POST /login` et la brancher sur le contrôleur.
+Dans `src/validators/auth.validator.js`, exporter `validateAuth` couvrant :
+
+| Champ | Règles |
+|---|---|
+| `email` | Obligatoire · format email valide (`isEmail`) |
+| `password` | Obligatoire · chaîne · min 6 caractères |
+
+
+### 4.7 Routes auth
+
+Dans `src/routes/auth.routes.js`, déclarer `POST /login` avec les middlewares : `validateAuth` · `validate` · puis le contrôleur, et brancher le fichier dans `server.js`.
 
 ### ✅ Test Étape 4
 
@@ -356,6 +385,7 @@ Résultats attendus :
 - Bons identifiants → `200` + `{ "token": "eyJ..." }`
 - Mauvais mot de passe → `401`
 - Email absent → `400`
+- Email invalide (pas un format email) → `400`
 
 ---
 
@@ -392,7 +422,7 @@ Dans `src/validators/contact.validator.js`, exporter `validateContact` couvrant 
 
 ## Étape 6 · CRUD Projets _(~60 min)_
  
-> 🔁 **Méthode de travail** : développer et tester **une feature à la fois**, dans l'ordre suivant. Pour chaque feature, implémenter les 3 couches (model → service → controller) puis déclarer la route et tester immédiatement avant de passer à la suivante.
+> 🔁 **Méthode de travail** : Pour chaque feature, implémenter les 3 couches (model → service → controller) puis déclarer la route et tester immédiatement avant de passer à la suivante.
  
 ---
  
