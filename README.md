@@ -493,11 +493,14 @@ Dans `src/validators/contact.validator.js`, exporter `validateContact` couvrant 
 **Model** — dans `src/models/project.model.js`, écrire `findAll()` :
 - Requête : `SELECT * FROM projects ORDER BY created_at DESC`
 - Retourne le tableau de résultats (vide si aucun projet)
+  
 **Service** — dans `src/services/project.service.js`, écrire `getAllProjects()` :
 - Appelle `model.findAll()` et retourne le résultat
+  
 **Controller** — dans `src/controllers/project.controller.js`, écrire `getAllProjects(req, res)` :
 - Appelle le service et renvoie `res.json(projects)`
 - Rappel : pas de `try/catch` (Express 5 propage automatiquement les erreurs async)
+  
 **Route** — dans `src/routes/project.routes.js`, déclarer `GET /` sans middleware d'auth, et brancher le fichier dans `server.js`.
  
 **✅ Test**
@@ -512,12 +515,15 @@ GET /api/projects → 200 []
 **Model** — écrire `findById(id)` :
 - Requête paramétrée : `SELECT * FROM projects WHERE id = ?`
 - Retourne l'objet projet ou `null`
+  
 **Service** — écrire `getProjectById(id)` :
 - Appelle `model.findById(id)`
 - Lance une `AppError('Projet introuvable', 404)` si le résultat est `null`
+  
 **Controller** — écrire `getProjectById(req, res)` :
 - Extrait `req.params.id`
 - Appelle le service et renvoie `res.json(project)`
+  
 **Route** — déclarer `GET /:id` sans middleware d'auth.
  
 **✅ Tests**
@@ -533,11 +539,14 @@ GET /api/projects/abc → 404
 **Model** — écrire `create(data)` :
 - Requête `INSERT INTO projects (title, description, tech_stack, github_url, demo_url, image_url) VALUES (?, ?, ?, ?, ?, ?)`
 - Appelle `findById(result.insertId)` pour retourner le projet complet
+  
 **Service** — écrire `createProject(data)` :
 - Appelle `model.create(data)` et retourne le projet créé
+  
 **Controller** — écrire `createProject(req, res)` :
 - Extrait les champs de `req.body`
 - Appelle le service et renvoie `res.status(201).json(project)`
+  
 **Route** — déclarer `POST /` avec les middlewares : `authenticate` · `authorize('admin')` · `validateProject` · `validate`
  
 **✅ Tests**
@@ -555,12 +564,15 @@ POST /api/projects (token admin, données valides)      → 201 + projet créé 
 **Model** — écrire `update(id, data)` :
 - Requête `UPDATE projects SET title=?, description=?, tech_stack=?, github_url=?, demo_url=?, image_url=? WHERE id=?`
 - Appelle `findById(id)` pour retourner le projet mis à jour
+  
 **Service** — écrire `updateProject(id, data)` :
 - Vérifie que le projet existe avec `findById(id)` → `AppError(404)` si absent
 - Appelle `model.update(id, data)` et retourne le résultat
+  
 **Controller** — écrire `updateProject(req, res)` :
 - Extrait `req.params.id` et `req.body`
 - Appelle le service et renvoie `res.json(project)`
+  
 **Route** — déclarer `PUT /:id` avec les middlewares : `authenticate` · `authorize('admin')` · `validateProject` · `validate`
  
 **✅ Tests**
