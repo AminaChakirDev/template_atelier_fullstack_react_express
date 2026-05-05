@@ -218,6 +218,7 @@ Dans `src/config/db.js`, créer et exporter un **pool** de connexions en utilisa
  
 <details>
 <summary>💡 Aide — configuration du pool MySQL</summary>
+  
 ```js
 import mysql from 'mysql2/promise';
  
@@ -271,8 +272,10 @@ app.listen(PORT, () => {
 ### 3.2 Middleware `errorHandler`
 
 Créer `src/middlewares/errorHandler.js`. Ce middleware intercepte toutes les erreurs et renvoie une réponse JSON propre.
-
+ 
 > Sa signature est particulière : il prend **4 paramètres** `(err, req, res, next)`. Retrouvez le pattern dans votre cours sur la gestion d'erreurs Express.
+ 
+📖 [Voir le cours sur la gestion d'erreurs Express](https://drive.google.com/file/d/1ysyCJEZS3aKuQpJ-Yw4Fx36dcSAiVsmW/view?usp=sharing)
 
 ### 3.3 Classe `AppError`
  
@@ -343,6 +346,8 @@ Dans `src/services/auth.service.js`, écrire la fonction `loginUser({ email, pas
 
 > Le service ne connaît pas `req` ni `res`. Il travaille avec des données brutes et lance des erreurs si nécessaire.
 
+📖 [Voir le cours sur la génération de JWT](https://drive.google.com/file/d/1xXKUI71qdmV8cHF-faq4zOXQ3b_ViYwG/view?usp=drive_link)
+
 ### 4.3 Contrôleur auth
 
 Dans `src/controllers/auth.controller.js`, écrire `login(req, res, next)` qui :
@@ -350,6 +355,8 @@ Dans `src/controllers/auth.controller.js`, écrire `login(req, res, next)` qui :
 1. Extrait `email` et `password` de `req.body`
 2. Appelle `authService.loginUser(...)`
 3. Renvoie `res.json({ token })` en cas de succès
+
+> 💡 Pas de `try/catch` — Express 5 propage automatiquement les erreurs async vers `errorHandler`.
 
 ### 4.4 Middleware `authenticate`
 
@@ -360,6 +367,8 @@ Dans `src/middlewares/auth.middleware.js`, créer le middleware `authenticate` q
 3. Extrait et vérifie le token avec `jwt.verify`
 4. Stocke le payload décodé dans `req.user`
 5. Appelle `next()` ou renvoie une erreur `401`
+
+📖 [Voir le cours sur le middleware authenticate](https://drive.google.com/file/d/1dDjpv87WwAEfuQffox35IF-qkLXfgweu/view?usp=drive_link)
 
 ### 4.5 Middleware `authorize`
 
@@ -380,6 +389,22 @@ Dans `src/validators/auth.validator.js`, exporter `validateAuth` couvrant :
 |---|---|
 | `email` | Obligatoire · format email valide (`isEmail`) |
 | `password` | Obligatoire · chaîne · min 6 caractères |
+
+<details>
+  
+<summary>💡 Aide — syntaxe express-validator</summary>
+
+```js
+import { body } from 'express-validator';
+ 
+export const validateAuth = [
+  body('email').notEmpty().isEmail().withMessage('Email invalide'),
+  body('password').notEmpty().isLength({ min: 6 }).withMessage('Mot de passe trop court'),
+];
+
+```
+ 
+</details>
 
 
 ### 4.7 Routes auth
