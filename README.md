@@ -445,7 +445,7 @@ Dans `src/validators/project.validator.js`, exporter un tableau de règles `vali
 | `demo_url` | Optionnel · si présent, doit être une URL valide (`isURL`) |
 | `image_url` | Optionnel · si présent, doit être une URL valide (`isURL`) |
 
-> 📖 Syntaxe de référence dans votre cours sur `express-validator` : `body('champ').notEmpty().isLength(...)` etc.
+📖 [Voir le cours sur express-validator](https://drive.google.com/file/d/1kagNSyo4q9WzSTZ1jbatxyiZuJL0pf0F/view?usp=drive_link)
 
 ### 5.2 Règles de validation du contact
 
@@ -581,26 +581,51 @@ DELETE /api/projects/1 (sans token)  → 401
 ## Étape 7 · Formulaire de contact _(~30 min)_
 
 ### 7.1 Service contact
-
+ 
 Dans `src/services/contact.service.js`, écrire `sendContactEmail({ name, email, message })` qui :
-- Crée un transporteur Nodemailer configuré avec les variables d'environnement Mailjet SMTP
+- Crée un transporteur Nodemailer configuré avec Gmail SMTP
 - Envoie un email formaté à l'adresse `MAIL_TO`
 - Lance une erreur en cas d'échec d'envoi
+  
+<details>
+  
+<summary>💡 Aide — configuration du transporteur Nodemailer Gmail</summary>
 
-> Le transporteur Nodemailer pour Mailjet utilise le host `in-v3.mailjet.com` sur le port `587`.
+```js
+import nodemailer from 'nodemailer';
+ 
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587,
+  auth: {
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS, // mot de passe d'application Google
+  },
+});
+```
+ 
+</details>
+
+> ⚠️ `MAIL_PASS` est un **mot de passe d'application** généré depuis les paramètres de sécurité Google, pas le mot de passe du compte.
 
 ### 7.2 Contrôleur et route contact
 
-- Dans `src/controllers/contact.controller.js` : `sendContact(req, res, next)` qui extrait les données et appelle le service.
-- Dans `src/routes/contact.routes.js` : `POST /` avec les middlewares `validateContact` et `validate`.
+Dans `src/controllers/contact.controller.js`, écrire `sendContact(req, res, next)` qui :
+- Extrait `name`, `email` et `message` de `req.body`
+- Appelle `contactService.sendContactEmail(...)`
+- Renvoie `res.json({ message: 'Message envoyé avec succès' })`
+
+### 7.3 Route contact
+ 
+Dans `src/routes/contact.routes.js`, déclarer `POST /` avec les middlewares `validateContact` · `validate` · puis le contrôleur, et brancher le fichier dans `server.js`.
 
 ### ✅ Test Étape 7
-
+ 
 ```
 POST /api/contact
 Body : { "name": "Alice", "email": "alice@test.fr", "message": "Bonjour, je vous contacte !" }
 → 200 { message: "Message envoyé avec succès" }
-
+ 
 POST /api/contact
 Body : { "name": "A", "email": "pasunemail", "message": "x" }
 → 400 + tableau d'erreurs de validation
@@ -609,9 +634,9 @@ Body : { "name": "A", "email": "pasunemail", "message": "x" }
 ---
 
 ## ✅ Récap fin Jour 1
-
+ 
 À ce stade, votre API expose :
-
+ 
 | Méthode | Route | Auth | Rôle requis | Description |
 |---|---|---|---|---|
 | POST | `/api/auth/login` | ❌ | — | Connexion admin |
@@ -621,7 +646,7 @@ Body : { "name": "A", "email": "pasunemail", "message": "x" }
 | PUT | `/api/projects/:id` | ✅ | admin | Modifier un projet |
 | DELETE | `/api/projects/:id` | ✅ | admin | Supprimer un projet |
 | POST | `/api/contact` | ❌ | — | Envoyer un message |
-
+ 
 ---
 
 # JOUR 2 — Front-end React + Tailwind
@@ -664,20 +689,24 @@ Dans `src/index.css`, remplacer tout le contenu par :
 ```
 portfolio-frontend/
 ├── src/
-│   ├── api/
+│   ├── hooks/
 │   │   └── apiFetch.js              ← Fonction centralisée pour tous les appels API
 │   ├── components/
 │   │   ├── Navbar.jsx
 │   │   ├── ProjectCard.jsx
 │   │   └── ContactForm.jsx          ← Utilise React Hook Form
 │   ├── context/
-│   │   └── AuthContext.jsx          ← AuthContext + AuthProvider
+│   │   ├── AuthContext.js           ← Création et export du contexte
+│   │   └── AuthProvider.jsx         ← Provider + useAuth hook
 │   ├── pages/
 │   │   ├── HomePage.jsx
 │   │   ├── ProjectsPage.jsx
 │   │   ├── ProjectDetailPage.jsx    ← Page détail d'un projet
 │   │   ├── LoginPage.jsx            ← Utilise React Hook Form
-│   │   └── AdminPage.jsx            ← Utilise React Hook Form
+│   │   └── admin/
+│   │       ├── AdminPage.jsx            ← Dashboard : liste + suppression
+│   │       ├── CreateProjectPage.jsx    ← Formulaire de création
+│   │       └── EditProjectPage.jsx      ← Formulaire d'édition pré-rempli
 │   ├── App.jsx
 │   ├── main.jsx
 │   └── index.css
@@ -711,22 +740,37 @@ Dans `src/api/apiFetch.js`, écrire une fonction `apiFetch(endpoint, options)` q
 
 > 📖 Cette fonction est similaire à celle que vous avez développée dans le cours myblog. Retrouvez-la et adaptez-la à cette architecture.
 
+📖 [Voir le cours sur apiFetch](https://drive.google.com/file/d/1vigS_HOuO2F51GAVIyz9lbNQ4Vwk3j7e/view?usp=drive_link)
+
 ---
 
 ## Étape 10 · Contexte d'authentification _(~20 min)_
 
-### 10.1 `AuthContext` avec `AuthProvider`
-
-Dans `src/context/AuthContext.jsx`, créer et exporter :
-
-- `AuthContext` : le contexte React
-- `AuthProvider` : le composant provider qui wrape les enfants. Il expose via la valeur du contexte :
+### 10.1 `AuthContext.js`
+ 
+Dans `src/context/AuthContext.js`, créer et exporter uniquement le contexte React :
+ 
+```js
+import { createContext } from 'react';
+ 
+const AuthContext = createContext(null);
+ 
+export default AuthContext;
+```
+ 
+### 10.2 `AuthProvider.jsx`
+ 
+Dans `src/context/AuthProvider.jsx`, créer et exporter :
+ 
+- `AuthProvider` : le composant provider qui expose via la valeur du contexte :
   - `token` (string ou null, initialisé depuis `localStorage`)
   - `isAuthenticated` (booléen dérivé de `token`)
-  - `user` (payload JWT décodé — utilisez `JSON.parse(atob(token.split('.')[1]))` pour le décoder sans librairie)
+  - `user` (payload JWT décodé avec `JSON.parse(atob(token.split('.')[1]))`)
   - `login(token)` : stocke le token dans `localStorage` et met à jour le state
   - `logout()` : supprime le token de `localStorage` et remet le state à `null`
 - `useAuth` : hook personnalisé qui retourne `useContext(AuthContext)`
+  
+📖 [Voir le cours sur AuthContext et AuthProvider](https://drive.google.com/file/d/1509-pSq2q3uMV1ofKsgMwymuSphe2ofB/view?usp=drive_link)
 
 ### 10.2 Brancher le provider dans `main.jsx`
 
@@ -761,7 +805,7 @@ Dans `App.jsx`, définir les routes avec React Router. Créer un composant `Priv
 - Redirige vers `/login` sinon avec `<Navigate>`
 
 Routes à déclarer :
-
+ 
 | Path | Composant | Protection |
 |---|---|---|
 | `/` | `HomePage` | Public |
@@ -769,6 +813,10 @@ Routes à déclarer :
 | `/projects/:id` | `ProjectDetailPage` | Public |
 | `/login` | `LoginPage` | Public |
 | `/admin` | `AdminPage` | `PrivateRoute` |
+| `/admin/projects/new` | `CreateProjectPage` | `PrivateRoute` |
+| `/admin/projects/:id/edit` | `EditProjectPage` | `PrivateRoute` |
+ 
+📖 [Voir le cours sur React Router et PrivateRoute](https://drive.google.com/file/d/15NSDTT_1s7tLkWhCYKbsCLjvdiKhMvbJ/view?usp=drive_link)
 
 ### 11.2 `Navbar`
 
@@ -790,7 +838,7 @@ Règles de validation RHF à appliquer :
 | Champ | Règles |
 |---|---|
 | `email` | Requis · format email valide |
-| `password` | Requis · min 6 caractères |
+| `password` | Requis |
 
 **Comportement attendu :**
 - `handleSubmit` de RHF appelle `apiFetch('/auth/login', { method: 'POST', body: ... })`
@@ -798,7 +846,28 @@ Règles de validation RHF à appliquer :
 - En cas d'erreur : afficher le message d'erreur retourné par l'API
 - Les messages d'erreur RHF s'affichent sous chaque champ en temps réel
 
-> 📖 Syntaxe RHF : `const { register, handleSubmit, formState: { errors } } = useForm()`
+📖 [Voir le cours sur React Hook Form](https://drive.google.com/file/d/1MbF4b6s79RSiGETwPCNuCMZ9xqB2UZVJ/view?usp=drive_link)
+ 
+<details>
+  
+<summary>💡 Aide — structure de base avec React Hook Form</summary>
+  
+```jsx
+const { register, handleSubmit, formState: { errors } } = useForm();
+ 
+const onSubmit = async (data) => {
+  // appel apiFetch ici
+};
+ 
+return (
+  <form onSubmit={handleSubmit(onSubmit)}>
+    <input {...register('email', { required: true })} />
+    {errors.email && <p>Email requis</p>}
+  </form>
+);
+```
+ 
+</details>
 
 ---
 
@@ -814,12 +883,43 @@ Créer `src/components/ProjectCard.jsx`. La carte affiche :
 - Les liens GitHub et Démo (si présents)
 - Un lien vers la page de détail `/projects/:id`
 
+> 💡 Pour tronquer la description, utiliser la classe Tailwind `line-clamp-3`.
+
 ### 13.2 `ProjectsPage`
 
 Dans `src/pages/ProjectsPage.jsx` :
 - Charger les projets au montage avec `useEffect` + `apiFetch('/projects')` en `async/await`
 - Gérer les états `loading`, `error`, `projects`
 - Afficher la grille de `ProjectCard`
+
+> ⚠️ Penser à gérer les 3 états : afficher un message de chargement, un message d'erreur, et la liste quand les données sont disponibles.
+ 
+<details>
+  
+<summary>💡 Aide — structure useEffect + fetch</summary>
+
+```jsx
+const [projects, setProjects] = useState([]);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState(null);
+ 
+useEffect(() => {
+  const fetchProjects = async () => {
+    try {
+      const data = await apiFetch('/projects');
+      setProjects(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+ 
+  fetchProjects();
+}, []);
+```
+ 
+</details>
 
 ---
 
@@ -836,12 +936,21 @@ Dans `src/pages/ProjectDetailPage.jsx` :
 
 ## Étape 15 · Page Admin — CRUD complet avec React Hook Form _(~60 min)_
 
-### Consignes
-
-Dans `src/pages/AdminPage.jsx`, utiliser **React Hook Form** pour le formulaire de création/modification de projet.
-
+### 15.1 `AdminPage` — Dashboard
+ 
+Dans `src/pages/admin/AdminPage.jsx` :
+- Charger tous les projets au montage avec `apiFetch('/projects')`
+- Afficher la liste avec pour chaque projet un bouton **Modifier** et un bouton **Supprimer**
+- Le bouton **Modifier** redirige vers `/admin/projects/:id/edit`
+- Le bouton **Supprimer** demande une confirmation (`window.confirm`) puis appelle `DELETE /api/projects/:id` et recharge la liste
+> 💡 Après une suppression, il est possible soit de rappeler `apiFetch('/projects')`, soit de filtrer le state local avec `.filter()` pour éviter un rechargement réseau.
+ 
+### 15.2 `CreateProjectPage` — Formulaire de création
+ 
+Dans `src/pages/admin/CreateProjectPage.jsx`, utiliser **React Hook Form**.
+ 
 **Règles de validation RHF :**
-
+ 
 | Champ | Règles |
 |---|---|
 | `title` | Requis · min 2 · max 150 caractères |
@@ -850,17 +959,23 @@ Dans `src/pages/AdminPage.jsx`, utiliser **React Hook Form** pour le formulaire 
 | `github_url` | Optionnel · si renseigné, doit commencer par `https://` |
 | `demo_url` | Optionnel · si renseigné, doit commencer par `https://` |
 | `image_url` | Optionnel · si renseigné, doit commencer par `https://` |
-
-**Fonctionnalités à implémenter :**
-
-1. **Lister** tous les projets au montage
-2. **Créer** : le formulaire vide → `POST /api/projects` → recharge la liste
-3. **Modifier** : clic "Modifier" → pré-remplir le formulaire avec `reset(project)` de RHF → `PUT /api/projects/:id` → recharge la liste
-4. **Supprimer** : confirmation → `DELETE /api/projects/:id` → met à jour la liste
-5. **Annuler** : bouton "Annuler" qui remet le formulaire à vide avec `reset()` et désactive le mode édition
-
-> 💡 `useForm` expose la méthode `reset(values)` pour pré-remplir le formulaire avec les données d'un projet existant.
-
+ 
+**Comportement attendu :**
+- `handleSubmit` appelle `POST /api/projects` via `apiFetch`
+- En cas de succès : rediriger vers `/admin`
+- En cas d'erreur : afficher le message retourné par l'API
+ 
+### 15.3 `EditProjectPage` — Formulaire d'édition
+ 
+Dans `src/pages/admin/EditProjectPage.jsx` :
+- Récupérer l'`id` depuis `useParams()`
+- Charger le projet via `apiFetch('/projects/' + id)` au montage
+- Pré-remplir le formulaire avec `reset(project)` de React Hook Form
+- Mêmes règles de validation que la création
+- `handleSubmit` appelle `PUT /api/projects/:id` via `apiFetch`
+- En cas de succès : rediriger vers `/admin`
+> 💡 `useForm` expose la méthode `reset(values)` pour pré-remplir le formulaire avec les données d'un projet existant. L'appeler dans le `useEffect` après avoir chargé le projet.
+ 
 ---
 
 ## Étape 16 · Page d'accueil et formulaire de contact _(~30 min)_
@@ -891,30 +1006,18 @@ Dans `src/pages/HomePage.jsx` :
 ---
 
 ## ✅ Récap fin Jour 2
-
+ 
 L'application complète est fonctionnelle :
-
+ 
 | Page | URL | Accès |
 |---|---|---|
 | Accueil + contact | `/` | Public |
 | Liste des projets | `/projects` | Public |
 | Détail d'un projet | `/projects/:id` | Public |
 | Connexion | `/login` | Public |
-| Dashboard admin CRUD | `/admin` | Privé — role `admin` |
-
----
-
-# Critères d'évaluation DWWM
-
-| Compétence | Ce qui est évalué dans cet atelier |
-|---|---|
-| CP1 – Maquetter une application | Structure des pages, cohérence UI, arborescence respectée |
-| CP2 – Réaliser une IHM | Composants React, formulaires RHF, gestion des états |
-| CP3 – Développer une interface utilisateur web | Tailwind, responsive, accessibilité de base (labels, aria) |
-| CP5 – Créer une base de données | Schéma SQL, types, colonne `role`, requêtes paramétrées |
-| CP6 – Développer les composants d'accès aux données | Modèles, architecture en couches, `async/await` |
-| CP7 – Développer la partie back-end | Routes REST, middlewares, validation `express-validator` |
-| CP8 – Élaborer et mettre en œuvre des composants dans une application | Auth JWT, rôles, gestion d'erreurs centralisée, envoi d'email |
+| Dashboard admin | `/admin` | Privé — role `admin` |
+| Créer un projet | `/admin/projects/new` | Privé — role `admin` |
+| Modifier un projet | `/admin/projects/:id/edit` | Privé — role `admin` |
 
 ---
 
@@ -928,17 +1031,7 @@ Avant de soumettre, vérifier chaque point :
 - [ ] Architecture 4 couches respectée côté back (routes → controller → service → model)
 - [ ] Validation `express-validator` sur les routes `POST /projects`, `PUT /projects/:id`, `POST /contact`
 - [ ] Middleware `authorize('admin')` sur toutes les routes d'écriture
-- [ ] React Hook Form utilisé sur : `LoginPage`, `AdminPage`, `ContactForm`
-- [ ] `async/await` partout (aucun `.then()`)
-- [ ] Page détail `/projects/:id` fonctionnelle
-- [ ] Formulaire de contact envoie un email réel via Mailjet
-
----
-
-# Aller plus loin (bonus)
-
-- Pagination de la liste des projets (`?page=1&limit=6`)
-- Ajout d'un champ `is_featured` (booléen) pour épingler des projets sur l'accueil
-- Déploiement du back sur Railway ou Render, du front sur Vercel ou Netlify
-- Protéger la route `DELETE /projects/:id` avec une confirmation côté serveur (vérifier que le projet appartient à l'admin connecté)
-- Ajouter `helmet` pour les en-têtes de sécurité HTTP
+- [ ] React Hook Form utilisé sur : `LoginPage`, `CreateProjectPage`, `EditProjectPage`, `ContactForm`
+- [ ] Utilisation de `async/await`
+- [ ] Pages détail `/projects/:id` et édition `/admin/projects/:id/edit` fonctionnelles
+- [ ] Formulaire de contact envoie un email réel via Gmail SMTP
