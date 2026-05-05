@@ -35,7 +35,7 @@ C'est un projet que vous pourrez continuer à faire évoluer après la formation
 | Back-end | Node.js · Express 5 (ES Modules) · MySQL2 |
 | Validation back | `express-validator` |
 | Auth | JWT (`jsonwebtoken`) + `bcrypt` |
-| Mail | Nodemailer + Mailjet SMTP |
+| Mail | Nodemailer + Gmail SMTP |
 | Front-end | React 19 (Vite) · Tailwind CSS v4 |
 | Validation front | React Hook Form |
 | Routing front | React Router v6 |
@@ -67,22 +67,23 @@ mkdir portfolio-backend && cd portfolio-backend
 npm init -y
 ```
 
+### 1.2 Installation des dépendances
+
+```bash
+npm install express mysql2 bcrypt jsonwebtoken dotenv cors nodemailer express-validator
+npm install --save-dev nodemon
+```
+
 Modifier `package.json` pour activer les ES Modules et ajouter les scripts :
 
 ```json
 {
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/server.js",
+    "dev": "nodemon src/server.js",
     "start": "node src/server.js"
   }
 }
-```
-
-### 1.2 Installation des dépendances
-
-```bash
-npm install express mysql2 bcrypt jsonwebtoken dotenv cors nodemailer express-validator
 ```
 
 ### 1.3 Structure de dossiers à créer
@@ -147,10 +148,9 @@ DB_USER=root
 DB_PASSWORD=
 DB_NAME=portfolio_db
 JWT_SECRET=un_secret_tres_long_et_aleatoire_a_remplacer
-MJ_APIKEY_PUBLIC=ta_cle_publique_mailjet
-MJ_APIKEY_PRIVATE=ta_cle_privee_mailjet
-MAIL_FROM=tonemail@domaine.com
-MAIL_TO=destinataire@domaine.com
+MAIL_USER=laplateforme.io.lyon@gmail.com
+MAIL_PASS=xxxx xxxx xxxx xxxx
+MAIL_TO=laplateforme.io.lyon@gmail.com
 ```
 
 Créer également `.env.example` avec les mêmes clés, valeurs vides, et ajouter `.env` dans `.gitignore`.
@@ -170,7 +170,6 @@ CREATE DATABASE IF NOT EXISTS portfolio_db
 
 USE portfolio_db;
 
--- La colonne role permet la protection par rôle
 CREATE TABLE users (
   id         INT AUTO_INCREMENT PRIMARY KEY,
   email      VARCHAR(255) NOT NULL UNIQUE,
@@ -216,8 +215,23 @@ VALUES ('admin@portfolio.fr', 'VOTRE_HASH_ICI', 'admin');
 ### 2.3 Configurer la connexion MySQL
 
 Dans `src/config/db.js`, créer et exporter un **pool** de connexions en utilisant `mysql2/promise` et les variables d'environnement.
-
-> 📖 Vous avez déjà fait cette configuration dans le cours. Retrouvez votre cours et adaptez-le.
+ 
+<details>
+<summary>💡 Aide — configuration du pool MySQL</summary>
+```js
+import mysql from 'mysql2/promise';
+ 
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+});
+ 
+export default pool;
+```
+ 
+</details>
 
 ---
 
