@@ -411,7 +411,7 @@ Dans `src/validators/auth.validator.js`, exporter `validateAuth` couvrant :
 | Champ | Règles |
 |---|---|
 | `email` | Obligatoire · format email valide (`isEmail`) |
-| `password` | Obligatoire · chaîne · min 6 caractères |
+| `password` | Obligatoire |
 
 <details>
   
@@ -422,7 +422,7 @@ import { body } from 'express-validator';
  
 export const validateAuth = [
   body('email').notEmpty().isEmail().withMessage('Email invalide'),
-  body('password').notEmpty().isLength({ min: 6 }).withMessage('Mot de passe trop court'),
+  body('password').notEmpty().withMessage('Mot de passe requis'),
 ];
 
 ```
