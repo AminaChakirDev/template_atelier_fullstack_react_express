@@ -283,7 +283,7 @@ Créer `src/errors/AppError.js`. Cette classe étend `Error` et ajoute un code H
  
 ```js
 class AppError extends Error {
-  constructor(status, message) {
+  constructor(message, status) {
     super(message);
     this.status = status;
   }
