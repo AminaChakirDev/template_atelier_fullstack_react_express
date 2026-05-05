@@ -368,7 +368,30 @@ Dans `src/middlewares/auth.middleware.js`, créer le middleware `authenticate` q
 4. Stocke le payload décodé dans `req.user`
 5. Appelle `next()` ou renvoie une erreur `401`
 
-📖 [Voir le cours sur le middleware authenticate](https://drive.google.com/file/d/1dDjpv87WwAEfuQffox35IF-qkLXfgweu/view?usp=drive_link)
+<details>
+<summary>💡 Aide — middleware authenticate</summary>
+  
+```js
+export const authenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return next(new AppError(401, "Token manquant"));
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = payload;
+    next();
+  } catch {
+    next(new AppError(401, "Token invalide"));
+  }
+};
+```
+ 
+</details>
 
 ### 4.5 Middleware `authorize`
 
