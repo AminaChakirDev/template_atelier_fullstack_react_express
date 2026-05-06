@@ -413,7 +413,7 @@ export const authenticate = (req, res, next) => {
     req.user = payload;
     next();
   } catch {
-    next(new AppError(401, 'Token invalide'));
+    next(new AppError('Token invalide', 401));
   }
 };
 ```
@@ -834,13 +834,13 @@ Dans `src/context/AuthProvider.jsx`, créer et exporter :
   
 📖 [Voir le cours sur AuthContext et AuthProvider](https://drive.google.com/file/d/1509-pSq2q3uMV1ofKsgMwymuSphe2ofB/view?usp=drive_link)
 
-### 10.2 Brancher le provider dans `main.jsx`
+### 10.3 Brancher le provider dans `main.jsx`
 
 ```jsx
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext.jsx';
+import { AuthProvider } from './context/AuthProvider.jsx';
 import App from './App.jsx';
 import './index.css';
 
