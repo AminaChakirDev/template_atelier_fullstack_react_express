@@ -422,14 +422,14 @@ export const authenticate = (req, res, next) => {
 
 ### 4.5 Middleware `authorize`
 
-Dans `src/middlewares/authorize.middleware.js`, créer une fonction `authorize(...roles)` qui retourne un middleware vérifiant que `req.user.role` fait partie des rôles autorisés.
+Dans `src/middlewares/authorize.middleware.js`, créer une fonction `authorize(role)` qui retourne un middleware vérifiant que `req.user.role` fait partie des rôles autorisés.
 
 ```js
 // Exemple d'usage attendu dans une route :
 router.post('/', authenticate, authorize('admin'), createProject);
 ```
 
-> `authorize` est une **factory** : elle prend des rôles en paramètre et retourne un middleware. Si le rôle de l'utilisateur ne correspond pas, répondre `403 Forbidden`.
+> `authorize` est une **factory** : elle prend un rôle en paramètre et retourne un middleware. Si le rôle de l'utilisateur ne correspond pas, répondre `403 Forbidden`.
 
 ### 4.6 Validator auth
 
