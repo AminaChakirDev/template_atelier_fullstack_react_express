@@ -459,7 +459,7 @@ export const validateAuth = [
 
 ### 4.7 Routes auth
 
-Dans `src/routes/auth.routes.js`, déclarer `POST /login` avec les middlewares : `validateAuth` · `validate` · puis le contrôleur, et brancher le fichier dans `server.js`.
+Dans `src/routes/auth.routes.js`, déclarer `POST /login` avec les middlewares `validateAuth` et `validate` · puis le contrôleur, et brancher le fichier dans `server.js`.
 
 ### ✅ Test Étape 4
 
