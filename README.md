@@ -763,7 +763,7 @@ VITE_API_URL=http://localhost:3001/api
 
 ### 9.1 Fonction `apiFetch`
 
-Dans `src/api/apiFetch.js`, écrire une fonction `apiFetch(endpoint, options)` qui :
+Dans `src/hooks/apiFetch.js`, écrire une fonction `apiFetch(endpoint, options)` qui :
 
 1. Lit `import.meta.env.VITE_API_URL` pour construire l'URL complète
 2. Récupère le token depuis le `localStorage`
