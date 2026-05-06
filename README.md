@@ -346,6 +346,33 @@ Dans `src/services/auth.service.js`, écrire la fonction `loginUser({ email, pas
 
 > Le service ne connaît pas `req` ni `res`. Il travaille avec des données brutes et lance des erreurs si nécessaire.
 
+<details>
+<summary>💡 Aide — service loginUser</summary>
+  
+```js
+export const loginUser = async (email, password) => {
+  const user = await UserModel.findByEmail(email);
+  if (!user) {
+    throw new AppError("Email ou mot de passe incorrect", 401 );
+  }
+
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) {
+    throw new AppError("Email ou mot de passe incorrect", 401);
+  }
+
+  const token = jwt.sign(
+    { id: user.id, email: user.email, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "24h" },
+  );
+
+  return token;
+};
+```
+ 
+</details>
+
 📖 [Voir le cours sur la génération de JWT](https://drive.google.com/file/d/1xXKUI71qdmV8cHF-faq4zOXQ3b_ViYwG/view?usp=drive_link)
 
 ### 4.3 Contrôleur auth
