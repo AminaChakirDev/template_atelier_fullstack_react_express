@@ -448,7 +448,7 @@ Dans `src/validators/auth.validator.js`, exporter `validateAuth` couvrant :
 import { body } from 'express-validator';
  
 export const validateAuth = [
-  body('email').notEmpty().isEmail().withMessage('Email invalide'),
+  body('email').notEmpty().withMessage('Le champ email est requis').isEmail().withMessage('Email invalide'),
   body('password').notEmpty().withMessage('Mot de passe requis'),
 ];
 
