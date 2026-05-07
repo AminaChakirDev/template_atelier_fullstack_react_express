@@ -498,9 +498,17 @@ Résultats attendus :
 
 Avant de développer le CRUD projets, mettre en place la validation.
 
-### 5.1 Règles de validation des projets
+### 5.1 Règles de validation des projets et de l'id
+ 
+Dans `src/validators/project.validator.js`, exporter deux tableaux de règles :
 
-Dans `src/validators/project.validator.js`, exporter un tableau de règles `validateProject` couvrant :
+**`validateId`** — valide le paramètre `:id` des routes :
+ 
+| Paramètre | Règles |
+|---|---|
+| `id` | Entier · valeur minimale : 1 |
+
+**`validateProject`** — valide le corps de la requête :
 
 | Champ | Règles |
 |---|---|
@@ -533,14 +541,17 @@ Dans `src/validators/contact.validator.js`, exporter `validateContact` couvrant 
  
 ### Feature 6.1 — Récupérer tous les projets
  
-**Model** — dans `src/models/project.model.js`, écrire `findAll()` :
+**Model**
+— dans `src/models/project.model.js`, écrire `findAll()` :
 - Requête : `SELECT * FROM projects ORDER BY created_at DESC`
 - Retourne le tableau de résultats (vide si aucun projet)
   
-**Service** — dans `src/services/project.service.js`, écrire `getAllProjects()` :
+**Service**
+— dans `src/services/project.service.js`, écrire `getAllProjects()` :
 - Appelle `model.findAll()` et retourne le résultat
   
-**Controller** — dans `src/controllers/project.controller.js`, écrire `getAllProjects(req, res)` :
+**Controller**
+— dans `src/controllers/project.controller.js`, écrire `getAllProjects(req, res)` :
 - Appelle le service et renvoie `res.json(projects)`
 - Rappel : pas de `try/catch` (Express 5 propage automatiquement les erreurs async)
   
@@ -555,42 +566,51 @@ GET /api/projects → 200 []
  
 ### Feature 6.2 — Récupérer un projet par son id
  
-**Model** — écrire `findById(id)` :
+**Model**
+— écrire `findById(id)` :
 - Requête paramétrée : `SELECT * FROM projects WHERE id = ?`
 - Retourne l'objet projet ou `null`
   
-**Service** — écrire `getProjectById(id)` :
+**Service**
+— écrire `getProjectById(id)` :
 - Appelle `model.findById(id)`
 - Lance une `AppError('Projet introuvable', 404)` si le résultat est `null`
   
-**Controller** — écrire `getProjectById(req, res)` :
+**Controller**
+— écrire `getProjectById(req, res)` :
 - Extrait `req.params.id`
 - Appelle le service et renvoie `res.json(project)`
   
-**Route** — déclarer `GET /:id` sans middleware d'auth.
+**Route**
+— déclarer `GET /:id` avec les middlewares : `validateId` · `validate`
  
 **✅ Tests**
 ```
 GET /api/projects/1   → 404 (pas encore de projet en base)
-GET /api/projects/abc → 404
+GET /api/projects/abc → 400 (id invalide)
+GET /api/projects/0   → 400 (id invalide)
 ```
  
 ---
  
 ### Feature 6.3 — Créer un projet
  
-**Model** — écrire `create(data)` :
+**Model**
+— écrire `create(data)` :
 - Requête `INSERT INTO projects (title, description, tech_stack, github_url, demo_url, image_url) VALUES (?, ?, ?, ?, ?, ?)`
 - Appelle `findById(result.insertId)` pour retourner le projet complet
   
-**Service** — écrire `createProject(data)` :
+**Service**
+— écrire `createProject(data)` :
 - Appelle `model.create(data)` et retourne le projet créé
   
-**Controller** — écrire `createProject(req, res)` :
+**Controller**
+— écrire `createProject(req, res)` :
 - Extrait les champs de `req.body`
 - Appelle le service et renvoie `res.status(201).json(project)`
   
-**Route** — déclarer `POST /` avec les middlewares : `authenticate` · `authorize('admin')` · `validateProject` · `validate`
+**Route**
+— déclarer `POST /` avec les middlewares : `authenticate` · `authorize('admin')` · `validateProject` · `validate`
  
 **✅ Tests**
 ```
@@ -604,24 +624,29 @@ POST /api/projects (token admin, données valides)      → 201 + projet créé 
  
 ### Feature 6.4 — Modifier un projet
  
-**Model** — écrire `update(id, data)` :
+**Model**
+— écrire `update(id, data)` :
 - Requête `UPDATE projects SET title=?, description=?, tech_stack=?, github_url=?, demo_url=?, image_url=? WHERE id=?`
 - Appelle `findById(id)` pour retourner le projet mis à jour
   
-**Service** — écrire `updateProject(id, data)` :
+**Service**
+— écrire `updateProject(id, data)` :
 - Vérifie que le projet existe avec `findById(id)` → `AppError(404)` si absent
 - Appelle `model.update(id, data)` et retourne le résultat
   
-**Controller** — écrire `updateProject(req, res)` :
+**Controller**
+— écrire `updateProject(req, res)` :
 - Extrait `req.params.id` et `req.body`
 - Appelle le service et renvoie `res.json(project)`
   
-**Route** — déclarer `PUT /:id` avec les middlewares : `authenticate` · `authorize('admin')` · `validateProject` · `validate`
+**Route**
+— déclarer `PUT /:id` avec les middlewares : `authenticate` · `authorize('admin')` · `validateId` · `validateProject` · `validate`
  
 **✅ Tests**
 ```
 PUT /api/projects/1 (token admin, données valides) → 200 + projet modifié
 PUT /api/projects/999 (token admin)                → 404
+PUT /api/projects/abc (token admin)                → 400 (id invalide)
 PUT /api/projects/1 (sans token)                   → 401
 ```
  
@@ -645,13 +670,14 @@ PUT /api/projects/1 (sans token)                   → 401
 - Appelle le service et renvoie `res.status(204).send()`
   
 **Route**
-— déclarer `DELETE /:id` avec les middlewares : `authenticate` · `authorize('admin')`
+— déclarer `DELETE /:id` avec les middlewares : `authenticate` · `authorize('admin')` · `validateId` · `validate`
  
 **✅ Tests**
 ```
-DELETE /api/projects/1 (token admin) → 204
-DELETE /api/projects/1 (token admin) → 404 (déjà supprimé)
-DELETE /api/projects/1 (sans token)  → 401
+DELETE /api/projects/1 (token admin)   → 204
+DELETE /api/projects/1 (token admin)   → 404 (déjà supprimé)
+DELETE /api/projects/abc (token admin) → 400 (id invalide)
+DELETE /api/projects/1 (sans token)    → 401
 ```
  
 ---
