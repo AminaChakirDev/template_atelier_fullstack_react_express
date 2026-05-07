@@ -739,7 +739,7 @@ Body : { "name": "A", "email": "pasunemail", "message": "x" }
 npm create vite@latest portfolio-frontend -- --template react
 cd portfolio-frontend
 npm install
-npm install tailwindcss @tailwindcss/vite react-router-dom react-hook-form
+npm install tailwindcss @tailwindcss/vite react-router-dom react-hook-form jwt-decode
 ```
 
 ### 8.2 Configurer Tailwind dans Vite
@@ -775,7 +775,7 @@ portfolio-frontend/
 │   │   └── ContactForm.jsx          ← Utilise React Hook Form
 │   ├── context/
 │   │   ├── AuthContext.js           ← Création et export du contexte
-│   │   └── AuthProvider.jsx         ← Provider + useAuth hook
+│   │   └── AuthProvider.jsx         ← Provider
 │   ├── pages/
 │   │   ├── HomePage.jsx
 │   │   ├── ProjectsPage.jsx
@@ -785,6 +785,8 @@ portfolio-frontend/
 │   │       ├── AdminPage.jsx            ← Dashboard : liste + suppression
 │   │       ├── CreateProjectPage.jsx    ← Formulaire de création
 │   │       └── EditProjectPage.jsx      ← Formulaire d'édition pré-rempli
+│   ├── utils/
+│   │   └── jwt.utils.js             ← Fonction isTokenValid
 │   ├── App.jsx
 │   ├── main.jsx
 │   └── index.css
@@ -826,33 +828,96 @@ Dans `src/hooks/apiFetch.js`, écrire une fonction `apiFetch(endpoint, options)`
 
 ## Étape 10 · Contexte d'authentification _(~20 min)_
 
-### 10.1 `AuthContext.js`
+### 10.1 `jwt.utils.js`
+ 
+Dans `src/utils/jwt.utils.js`, créer et exporter la fonction `isTokenValid(token)` qui vérifie qu'un token JWT est présent et non expiré :
+ 
+```js
+import { jwtDecode } from 'jwt-decode';
+ 
+export function isTokenValid(token) {
+  try {
+    const decodedToken = jwtDecode(token);
+    if (!decodedToken.exp) return false;
+    return decodedToken.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+}
+```
+ 
+> 💡 `jwtDecode` ne vérifie pas la signature du token — il se contente de le décoder. C'est suffisant côté front pour savoir si le token est expiré avant d'envoyer une requête.
+
+### 10.2 `AuthContext.js`
  
 Dans `src/context/AuthContext.js`, créer et exporter uniquement le contexte React :
  
 ```js
-import { createContext } from 'react';
- 
-const AuthContext = createContext(null);
- 
-export default AuthContext;
+import { createContext } from "react";
+
+export const AuthContext = createContext();
 ```
  
-### 10.2 `AuthProvider.jsx`
+### 10.3 `AuthProvider.jsx`
  
 Dans `src/context/AuthProvider.jsx`, créer et exporter :
  
 - `AuthProvider` : le composant provider qui expose via la valeur du contexte :
-  - `token` (string ou null, initialisé depuis `localStorage`)
-  - `isAuthenticated` (booléen dérivé de `token`)
-  - `user` (payload JWT décodé avec `JSON.parse(atob(token.split('.')[1]))`)
+  - `isAuthenticated` (booléen)
   - `login(token)` : stocke le token dans `localStorage` et met à jour le state
   - `logout()` : supprime le token de `localStorage` et remet le state à `null`
-- `useAuth` : hook personnalisé qui retourne `useContext(AuthContext)`
-  
-📖 [Voir le cours sur AuthContext et AuthProvider](https://drive.google.com/file/d/1509-pSq2q3uMV1ofKsgMwymuSphe2ofB/view?usp=drive_link)
 
-### 10.3 Brancher le provider dans `main.jsx`
+> 💡 Au montage, si un token expiré est présent dans le `localStorage`, il est supprimé immédiatement, l'utilisateur ne reste pas bloqué dans un état "connecté" avec un token invalide.
+  
+📖 [Voir les cours sur AuthContext et AuthProvider](https://drive.google.com/file/d/1509-pSq2q3uMV1ofKsgMwymuSphe2ofB/view?usp=drive_link)
+
+<details>
+  
+<summary>💡 Aide — structure de AuthProvider</summary>
+  
+```jsx
+import { useState } from "react";
+import { AuthContext } from "./AuthContext";
+import { isTokenValid } from "../utils/jwt.utils";
+
+export function AuthProvider({ children }) {
+  const storedToken = localStorage.getItem("token");
+  
+  if (storedToken && !isTokenValid(storedToken)) {
+    localStorage.removeItem("token");
+  }
+
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !!storedToken && isTokenValid(storedToken),
+  );
+
+  function login(token) {
+    localStorage.setItem("token", token);
+    setIsAuthenticated(true);
+  }
+
+  function logout() {
+    localStorage.removeItem("token");
+    setIsAuthenticated(false);
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        login,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+```
+ 
+</details>
+
+### 10.4 Brancher le provider dans `main.jsx`
 
 ```jsx
 import { StrictMode } from 'react';
@@ -880,7 +945,7 @@ createRoot(document.getElementById('root')).render(
 ### 11.1 `App.jsx` — routes et protection
 
 Dans `App.jsx`, définir les routes avec React Router. Créer un composant `PrivateRoute` qui :
-- Lit `isAuthenticated` depuis `useAuth()`
+- Lit `isAuthenticated` depuis `AuthContext`
 - Rend les enfants si authentifié
 - Redirige vers `/login` sinon avec `<Navigate>`
 
@@ -902,7 +967,7 @@ Routes à déclarer :
 
 Le composant `Navbar` doit :
 - Afficher les liens de navigation (Accueil, Projets)
-- Utiliser `useAuth()` pour afficher "Connexion" ou "Déconnexion" selon l'état
+- Utiliser `AuthContext` pour afficher "Connexion" ou "Déconnexion" selon l'état
 - Appeler `logout()` puis rediriger vers `/` au clic sur "Déconnexion"
 
 ---
