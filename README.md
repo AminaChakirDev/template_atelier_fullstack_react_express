@@ -794,7 +794,7 @@ Dans `src/index.css`, remplacer tout le contenu par :
 portfolio-frontend/
 ├── src/
 │   ├── hooks/
-│   │   └── useFetch.js              ← Fonction centralisée pour tous les appels API
+│   │   └── useFetch.js              ←  Hook useFetch + fonction apiFetch
 │   ├── components/
 │   │   ├── Navbar.jsx
 │   │   ├── ProjectCard.jsx
