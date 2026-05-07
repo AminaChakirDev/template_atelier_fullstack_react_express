@@ -802,7 +802,7 @@ Dans `src/hooks/apiFetch.js`, écrire une fonction `apiFetch(endpoint, options)`
 
 > 📖 Cette fonction est similaire à celle que vous avez développée dans le cours myblog. Retrouvez-la et adaptez-la à cette architecture.
 
-📖 [Voir le cours sur apiFetch](https://drive.google.com/file/d/1vigS_HOuO2F51GAVIyz9lbNQ4Vwk3j7e/view?usp=drive_link)
+📖 Voir le cours sur [apiFetch](https://drive.google.com/file/d/15NSDTT_1s7tLkWhCYKbsCLjvdiKhMvbJ/view?usp=sharing) et [Gestion des erreurs](https://drive.google.com/file/d/1vigS_HOuO2F51GAVIyz9lbNQ4Vwk3j7e/view?usp=drive_link)
 
 ---
 
