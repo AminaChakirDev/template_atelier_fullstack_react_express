@@ -794,7 +794,7 @@ Dans `src/index.css`, remplacer tout le contenu par :
 portfolio-frontend/
 ├── src/
 │   ├── hooks/
-│   │   └── apiFetch.js              ← Fonction centralisée pour tous les appels API
+│   │   └── useFetch.js              ← Fonction centralisée pour tous les appels API
 │   ├── components/
 │   │   ├── Navbar.jsx
 │   │   ├── ProjectCard.jsx
@@ -836,7 +836,7 @@ VITE_API_URL=http://localhost:3001/api
 
 ### 9.1 Fonction `apiFetch`
 
-Dans `src/hooks/apiFetch.js`, écrire une fonction `apiFetch(endpoint, options)` qui :
+Dans `src/hooks/useFetch.js`, écrire une fonction `apiFetch(endpoint, options)` qui :
 
 1. Lit `import.meta.env.VITE_API_URL` pour construire l'URL complète
 2. Récupère le token depuis le `localStorage`
@@ -848,7 +848,7 @@ Dans `src/hooks/apiFetch.js`, écrire une fonction `apiFetch(endpoint, options)`
 
 > 📖 Cette fonction est similaire à celle que vous avez développée dans le cours myblog. Retrouvez-la et adaptez-la à cette architecture.
 
-📖 Voir le cours sur [apiFetch](https://drive.google.com/file/d/15NSDTT_1s7tLkWhCYKbsCLjvdiKhMvbJ/view?usp=sharing) et [Gestion des erreurs](https://drive.google.com/file/d/1vigS_HOuO2F51GAVIyz9lbNQ4Vwk3j7e/view?usp=drive_link)
+📖 Voir le cours sur [useFetch](https://drive.google.com/file/d/15NSDTT_1s7tLkWhCYKbsCLjvdiKhMvbJ/view?usp=sharing) et [Gestion des erreurs](https://drive.google.com/file/d/1vigS_HOuO2F51GAVIyz9lbNQ4Vwk3j7e/view?usp=drive_link)
 
 ---
 
