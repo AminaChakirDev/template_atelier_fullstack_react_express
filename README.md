@@ -527,7 +527,7 @@ Dans `src/validators/contact.validator.js`, exporter `validateContact` couvrant 
 
 ## Étape 6 · CRUD Projets _(~60 min)_
  
-> 🔁 **Méthode de travail** : Pour chaque feature, implémenter les 3 couches (model → service → controller) puis déclarer la route et tester immédiatement avant de passer à la suivante.
+> 🔁 **Méthode de travail** : Pour chaque feature, implémenter les 3 couches (model → service → controller) puis déclarer la route et tester immédiatement avant de passer à la suivante. N'hésite pas à revoir ce qui a été fait dans l'[exercice de debug BeatList](https://github.com/AminaChakirDev/cdpi-2025-debug-express-js-beatlist/tree/correction)
  
 ---
  
