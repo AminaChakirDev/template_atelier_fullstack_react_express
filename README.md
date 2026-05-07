@@ -431,6 +431,22 @@ router.post('/', authenticate, authorize('admin'), createProject);
 
 > `authorize` est une **factory** : elle prend un rôle en paramètre et retourne un middleware. Si le rôle de l'utilisateur ne correspond pas, répondre `403 Forbidden`.
 
+<details>
+<summary>💡 Aide — middleware authorize</summary>
+  
+```js
+import AppError from "./AppError.js";
+
+export const authorize = (allowedRole) => (req, res, next) => {
+  if (!allowedRole === req.user.role) {
+    return next(new AppError(403, "Action non autorisée"));
+  }
+  next();
+};
+```
+ 
+</details>
+
 ### 4.6 Validator auth
 
 Dans `src/validators/auth.validator.js`, exporter `validateAuth` couvrant :
