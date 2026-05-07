@@ -800,6 +800,8 @@ portfolio-frontend/
 VITE_API_URL=http://localhost:3001/api
 ```
 
+📖 Lien vers la [documentation Vite sur les variables d'environnements](https://vite.dev/guide/env-and-mode#env-variables)
+
 ---
 
 ## Étape 9 · Utilitaire API _(~15 min)_
