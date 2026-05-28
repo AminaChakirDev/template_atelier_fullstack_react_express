@@ -713,8 +713,27 @@ const transporter = nodemailer.createTransport({
 ### 7.2 Service contact
  
 Dans `src/services/contact.service.js`, écrire `sendContactEmail({ name, email, message })` qui :
+- Indique que l'expéditeur du mail est `MAIL_USER`
 - Envoie un email formaté à l'adresse `MAIL_TO`
-- Lance une erreur en cas d'échec d'envoi
+- Précise dans le `subject` le nom et l'email de l'auteur du message
+- Ajoute dans la zone `text`le contenu du message envoyé
+
+<details>
+  
+<summary>💡 Aide — configuration du `ContactService`
+
+```js
+export const sendContactEmail = async ({ name, email, message }) => {
+  return transporter.sendMail({
+    from: process.env.MAIL_USER,
+    to: process.env.MAIL_TO,
+    subject: `Contact portfolio de ${name}`,
+    text: `Message de ${name} (${email}) : ${message}`
+  });
+};
+```
+ 
+</details>
   
 
 ### 7.3 Contrôleur et route contact
