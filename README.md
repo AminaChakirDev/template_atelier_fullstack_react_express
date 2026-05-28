@@ -684,13 +684,11 @@ DELETE /api/projects/1 (sans token)    → 401
 
 ## Étape 7 · Formulaire de contact _(~30 min)_
 
-### 7.1 Service contact
- 
-Dans `src/services/contact.service.js`, écrire `sendContactEmail({ name, email, message })` qui :
+### 7.1 Transporteur Nodemailer
+
+Dans `src/config/email.js` :
 - Crée un transporteur Nodemailer configuré avec Gmail SMTP
-- Envoie un email formaté à l'adresse `MAIL_TO`
-- Lance une erreur en cas d'échec d'envoi
-  
+
 <details>
   
 <summary>💡 Aide — configuration du transporteur Nodemailer Gmail</summary>
@@ -712,14 +710,21 @@ const transporter = nodemailer.createTransport({
 
 > ⚠️ `MAIL_PASS` est un **mot de passe d'application** généré depuis les paramètres de sécurité Google, pas le mot de passe du compte.
 
-### 7.2 Contrôleur et route contact
+### 7.2 Service contact
+ 
+Dans `src/services/contact.service.js`, écrire `sendContactEmail({ name, email, message })` qui :
+- Envoie un email formaté à l'adresse `MAIL_TO`
+- Lance une erreur en cas d'échec d'envoi
+  
+
+### 7.3 Contrôleur et route contact
 
 Dans `src/controllers/contact.controller.js`, écrire `sendContact(req, res, next)` qui :
 - Extrait `name`, `email` et `message` de `req.body`
 - Appelle `contactService.sendContactEmail(...)`
 - Renvoie `res.json({ message: 'Message envoyé avec succès' })`
 
-### 7.3 Route contact
+### 7.4 Route contact
  
 Dans `src/routes/contact.routes.js`, déclarer `POST /` avec les middlewares `validateContact` · `validate` · puis le contrôleur, et brancher le fichier dans `server.js`.
 
